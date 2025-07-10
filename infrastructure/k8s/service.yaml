@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: banking-app-backend-service
+  namespace: banking-app
+  labels:
+    app: banking-app
+    component: backend
+    environment: development
+    security: high
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-internal: "false"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  - port: 8443
+    targetPort: 8443
+    protocol: TCP
+    name: https
+  selector:
+    app: banking-app
+    component: backend
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: banking-app-frontend-service
+  namespace: banking-app
+  labels:
+    app: banking-app
+    component: frontend
+    environment: development
+    security: high
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: banking-app
+    component: frontend
+  sessionAffinity: None 

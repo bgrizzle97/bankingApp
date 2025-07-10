@@ -1,0 +1,240 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banking-app-backend
+  namespace: banking-app
+  labels:
+    app: banking-app
+    component: backend
+    environment: development
+    security: high
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: banking-app
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: banking-app
+        component: backend
+        environment: development
+        security: high
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+      containers:
+      - name: banking-app-backend
+        image: banking-app/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Development"
+        - name: ASPNETCORE_URLS
+          value: "http://:8080;https://:8443"
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: banking-app-config
+              key: db_host
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: banking-app-config
+              key: db_name
+        - name: DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: banking-app-config
+              key: db_username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: banking-app-secrets
+              key: db-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: banking-app-secrets
+              key: jwt-secret
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: banking-app-secrets
+              key: encryption-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+          readOnly: true
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: logs-volume
+          mountPath: /app/logs
+      volumes:
+      - name: config-volume
+        configMap:
+          name: banking-app-config
+      - name: tmp-volume
+        emptyDir: {}
+      - name: logs-volume
+        emptyDir: {}
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - banking-app
+              topologyKey: kubernetes.io/hostname
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banking-app-frontend
+  namespace: banking-app
+  labels:
+    app: banking-app
+    component: frontend
+    environment: development
+    security: high
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: banking-app
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: banking-app
+        component: frontend
+        environment: development
+        security: high
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+      containers:
+      - name: banking-app-frontend
+        image: banking-app/frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "development"
+        - name: REACT_APP_API_URL
+          value: "https://api.banking-app.example.com"
+        - name: REACT_APP_AUTH_DOMAIN
+          value: "banking-app.auth0.com"
+        - name: REACT_APP_CLIENT_ID
+          value: "your-client-id"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - banking-app
+              topologyKey: kubernetes.io/hostname 

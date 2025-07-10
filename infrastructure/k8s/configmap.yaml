@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: banking-app-config
+  namespace: banking-app
+  labels:
+    app: banking-app
+    environment: development
+    security: high
+data:
+  # Application Configuration
+  app.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft": "Warning",
+          "Microsoft.Hosting.Lifetime": "Information"
+        }
+      },
+      "AllowedHosts": "*",
+      "ConnectionStrings": {
+        "DefaultConnection": "Host=${DB_HOST};Database=${DB_NAME};Username=${DB_USERNAME};Password=${DB_PASSWORD};SSL Mode=Require;"
+      },
+      "JwtSettings": {
+        "SecretKey": "${JWT_SECRET}",
+        "Issuer": "banking-app",
+        "Audience": "banking-app-users",
+        "ExpirationMinutes": 60
+      },
+      "Security": {
+        "RequireHttps": true,
+        "EnableCors": true,
+        "CorsOrigins": ["https://banking-app.example.com"],
+        "RateLimiting": {
+          "Enabled": true,
+          "RequestsPerMinute": 100
+        }
+      },
+      "Database": {
+        "EncryptionEnabled": true,
+        "AuditLogging": true,
+        "ConnectionTimeout": 30
+      },
+      "Monitoring": {
+        "HealthCheckEndpoint": "/health",
+        "MetricsEndpoint": "/metrics",
+        "LoggingLevel": "Information"
+      }
+    }
+  
+  # Environment-specific overrides
+  development.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Debug",
+          "Microsoft": "Information"
+        }
+      },
+      "Security": {
+        "RequireHttps": false,
+        "CorsOrigins": ["http://localhost:3000", "http://localhost:8080"]
+      },
+      "Database": {
+        "EncryptionEnabled": false
+      }
+    }
+  
+  production.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Warning",
+          "Microsoft": "Warning"
+        }
+      },
+      "Security": {
+        "RequireHttps": true,
+        "CorsOrigins": ["https://banking-app.example.com"]
+      },
+      "Database": {
+        "EncryptionEnabled": true
+      }
+    } 

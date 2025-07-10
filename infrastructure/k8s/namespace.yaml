@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: banking-app
+  labels:
+    name: banking-app
+    environment: development
+    security: high
+    compliance: financial
+  annotations:
+    description: "Namespace for the high-security banking application" 

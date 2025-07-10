@@ -1,0 +1,56 @@
+# High-Security Banking Application Infrastructure Variables
+# Example configuration file - copy to terraform.tfvars and modify as needed
+
+# AWS Configuration
+aws_region = "us-east-1"
+environment = "development"
+
+# Project Configuration
+project_name = "banking-app"
+
+# Network Configuration
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
+public_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+private_subnets = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
+database_subnets = ["10.0.21.0/24", "10.0.22.0/24", "10.0.23.0/24"]
+
+# Security Configuration
+allowed_ssh_cidr_blocks = ["0.0.0.0/0"]  # Restrict this in production!
+
+# EKS Configuration
+kubernetes_version = "1.28"
+eks_node_instance_types = ["t3.medium", "t3.large"]
+eks_desired_size = 2
+eks_max_size = 4
+eks_min_size = 1
+
+# SSL Certificate (optional - leave empty for development)
+certificate_arn = ""
+
+# Database Configuration
+db_instance_class = "db.t3.micro"
+db_allocated_storage = 20
+db_max_allocated_storage = 100
+db_name = "banking_app"
+db_username = "banking_admin"
+db_password = "YourSecurePassword123!"  # Change this!
+db_backup_retention_period = 7
+
+# Bastion Host Configuration
+bastion_ami = "ami-0c02fb55956c7d316"  # Amazon Linux 2023 in us-east-1
+ssh_key_name = "your-ssh-key-name"  # Optional - leave empty if not using SSH keys
+
+# Production Environment Overrides
+# Uncomment and modify these for production deployment
+# environment = "production"
+# eks_node_instance_types = ["t3.large", "t3.xlarge"]
+# eks_desired_size = 3
+# eks_max_size = 6
+# eks_min_size = 2
+# db_instance_class = "db.t3.large"
+# db_allocated_storage = 100
+# db_max_allocated_storage = 1000
+# db_backup_retention_period = 30
+# allowed_ssh_cidr_blocks = ["YOUR_OFFICE_IP/32", "YOUR_VPN_IP/32"]
+# certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/your-cert-id" 

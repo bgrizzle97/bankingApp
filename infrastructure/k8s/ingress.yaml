@@ -1,0 +1,70 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: banking-app-ingress
+  namespace: banking-app
+  labels:
+    app: banking-app
+    environment: development
+    security: high
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: "/health"
+    alb.ingress.kubernetes.io/healthcheck-port: "8080"
+    alb.ingress.kubernetes.io/healthcheck-protocol: "HTTP"
+    alb.ingress.kubernetes.io/success-codes: "200"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/timeout-seconds: "5"
+    alb.ingress.kubernetes.io/interval-seconds: "30"
+    alb.ingress.kubernetes.io/security-groups: "sg-xxxxxxxxx"  # Replace with actual security group
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:123456789012:certificate/your-cert-id"  # Replace with actual certificate
+    alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": {"Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
+    alb.ingress.kubernetes.io/group.name: "banking-app"
+    alb.ingress.kubernetes.io/group.order: "1"
+    external-dns.alpha.kubernetes.io/hostname: "api.banking-app.example.com, www.banking-app.example.com"
+spec:
+  rules:
+  - host: api.banking-app.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: banking-app-backend-service
+            port:
+              number: 8080
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: banking-app-backend-service
+            port:
+              number: 8080
+      - path: /metrics
+        pathType: Exact
+        backend:
+          service:
+            name: banking-app-backend-service
+            port:
+              number: 8080
+  - host: www.banking-app.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: banking-app-frontend-service
+            port:
+              number: 3000
+  tls:
+  - hosts:
+    - api.banking-app.example.com
+    - www.banking-app.example.com
+    secretName: banking-app-tls 
